@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import Image from "next/image";
@@ -8,7 +7,7 @@ import { LinkIcon } from "lucide-react";
 import { useEffect } from "react";
 
 import { LoginForm } from "@/components/login-form";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading, isInitialized } = useAuth();
@@ -19,10 +18,6 @@ export default function LoginPage() {
       router.push("/dashboard");
     }
   }, [isAuthenticated, isLoading, isInitialized, router]);
-
-  if (isLoading || !isInitialized) {
-    return <div>Chargement...</div>;
-  }
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

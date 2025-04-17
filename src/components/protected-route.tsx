@@ -1,8 +1,9 @@
 "use client";
 
-import { useAuth } from "@/providers/auth-provider";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import { useAuth } from "@/hooks/use-auth";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, isInitialized } = useAuth();

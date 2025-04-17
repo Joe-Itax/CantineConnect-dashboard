@@ -1,40 +1,22 @@
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
-  return (
-    <div>
-      <main>
-        <h1 className="text-3xl font-bold">Hello world!</h1>
-        <Image
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const { isAuthenticated, isLoading, isInitialized } = useAuth();
+  const router = useRouter();
 
-        <div>
-          <Link href="/dashboard" rel="noopener noreferrer">
-            <Button>
-              <Image
-                src="/vercel.svg"
-                alt="Vercel logomark"
-                width={20}
-                height={20}
-              />
-              Go To Dashboard
-            </Button>
-          </Link>
-        </div>
-      </main>
-    </div>
-  );
+  useEffect(() => {
+    if (!isLoading && isInitialized && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, isLoading, isInitialized, router]);
+
+  if (isLoading || !isInitialized) {
+    return <div>Chargement...</div>;
+  }
+  return <div></div>;
 }

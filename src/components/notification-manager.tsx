@@ -1,6 +1,6 @@
 "use client";
 import { Notification } from "./notification";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/hooks/use-auth";
 
 export function NotificationManager() {
   const { alert, clearAlert } = useAuth();
