@@ -6,6 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { DashboardSkeleton } from "./skeleton";
 
 export default function DashboardLayout({
   children,
@@ -24,11 +25,7 @@ export default function DashboardLayout({
 
   // État de chargement
   if (isLoading || !isInitialized) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // Si non authentifié (après vérification)
@@ -36,7 +33,6 @@ export default function DashboardLayout({
     return null;
   }
 
-  // Layout principal
   return (
     <SidebarProvider
       style={
