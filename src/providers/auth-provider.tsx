@@ -21,7 +21,7 @@ interface User {
   name: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
