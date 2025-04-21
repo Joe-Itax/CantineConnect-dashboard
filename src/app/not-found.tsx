@@ -1,4 +1,7 @@
-import Link from 'next/link'
+"use client";
+
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -14,14 +17,14 @@ export default function NotFound() {
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Link
-              href="/"
+              href="/dashboard"
               className="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/80"
             >
-              Retour à l’accueil
+              Retour au dashboard
             </Link>
-            <Link href="#" className="text-sm font-semibold text-gray-900">
+            <Button variant={"outline"} onClick={() => history.back()}>
               <span aria-hidden="true">&larr;</span> Retour à la page précédente
-            </Link>
+            </Button>
           </div>
         </div>
       </main>

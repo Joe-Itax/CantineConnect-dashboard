@@ -4,20 +4,33 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LinkIcon } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { LoginForm } from "@/components/login-form";
 import { useAuth } from "@/hooks/use-auth";
+import { DashboardSkeleton } from "../dashboard/skeleton";
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading, isInitialized } = useAuth();
   const router = useRouter();
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   useEffect(() => {
     if (!isLoading && isInitialized && isAuthenticated) {
       router.push("/dashboard");
     }
   }, [isAuthenticated, isLoading, isInitialized, router]);
+
+  useEffect(() => {
+    if (!isLoading && isInitialized) {
+      setIsFirstLoad(false);
+    }
+  }, [isLoading, isInitialized]);
+
+  // Charger DashboardSkeleton uniquement au premier chargement de la page
+  if (isFirstLoad && (isLoading || !isInitialized)) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

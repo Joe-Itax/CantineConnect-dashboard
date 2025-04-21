@@ -12,6 +12,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function NavMain({
   items,
@@ -22,6 +23,7 @@ export function NavMain({
     icon?: Icon;
   }[];
 }) {
+  const pathname = usePathname();
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -46,7 +48,6 @@ export function NavMain({
         </SidebarMenu> */}
         <SidebarMenu>
           {items.map((item) => (
-            // What Link is active?
             <Link
               href={`${item.url}`}
               key={`${item.title} - ${item.url}`}
@@ -55,7 +56,11 @@ export function NavMain({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip={item.title}
-                  className="cursor-pointer"
+                  className={`${
+                    pathname === item.url
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground hover:text-primary-foreground link-active"
+                      : "noo-active"
+                  } `}
                 >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>

@@ -10,10 +10,10 @@ import {
   // IconFileDescription,
   // IconFileWord,
   IconFolder,
-  IconHelp,
+  // IconHelp,
   IconListDetails,
   // IconReport,
-  IconSearch,
+  // IconSearch,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react";
@@ -30,8 +30,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
+// import Link from "next/link";
 import { LinkIcon } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const data = {
   user: {
@@ -47,17 +48,17 @@ const data = {
     },
     {
       title: "Lifecycle",
-      url: "#",
+      url: "/l",
       icon: IconListDetails,
     },
     {
       title: "Analytics",
-      url: "#",
+      url: "/a",
       icon: IconChartBar,
     },
     {
       title: "Projects",
-      url: "#",
+      url: "/p",
       icon: IconFolder,
     },
     {
@@ -66,91 +67,29 @@ const data = {
       icon: IconUsers,
     },
   ],
-  // navClouds: [
-  //   {
-  //     title: "Capture",
-  //     icon: IconCamera,
-  //     isActive: true,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Proposal",
-  //     icon: IconFileDescription,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Prompts",
-  //     icon: IconFileAi,
-  //     url: "#",
-  //     items: [
-  //       {
-  //         title: "Active Proposals",
-  //         url: "#",
-  //       },
-  //       {
-  //         title: "Archived",
-  //         url: "#",
-  //       },
-  //     ],
-  //   },
-  // ],
   navSecondary: [
     {
-      title: "Settings",
-      url: "#",
+      title: "Paramètres",
+      url: "/settings",
       icon: IconSettings,
     },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Recherche",
-      url: "#",
-      icon: IconSearch,
-    },
+    // {
+    //   title: "Get Help",
+    //   url: "#",
+    //   icon: IconHelp,
+    // },
+    // {
+    //   title: "Recherche",
+    //   url: "#",
+    //   icon: IconSearch,
+    // },
   ],
-  // documents: [
-  //   {
-  //     name: "Data Library",
-  //     url: "#",
-  //     icon: IconDatabase,
-  //   },
-  //   {
-  //     name: "Reports",
-  //     url: "#",
-  //     icon: IconReport,
-  //   },
-  //   {
-  //     name: "Word Assistant",
-  //     url: "#",
-  //     icon: IconFileWord,
-  //   },
-  // ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth();
+
+  console.log("user: ", user);
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -160,10 +99,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <Link href="/">
-                <LinkIcon className="!size-5" />
+              {/* <Link href="/dashboard"> */}
+              <div>
+                <LinkIcon className="!size-6" />
                 <span className="text-base font-semibold">Cantine Connect</span>
-              </Link>
+              </div>
+              {/* </Link> */}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -173,7 +114,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user || { name: "", email: "", avatar: "" }} />
       </SidebarFooter>
     </Sidebar>
   );
