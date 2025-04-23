@@ -63,14 +63,14 @@ const data = {
     },
     {
       title: "Elèves",
-      url: "/students",
+      url: "/dashboard/students",
       icon: IconUsers,
     },
   ],
   navSecondary: [
     {
       title: "Paramètres",
-      url: "/settings",
+      url: "/dashboard/settings",
       icon: IconSettings,
     },
     // {

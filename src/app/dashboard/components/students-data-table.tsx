@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -91,38 +92,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useStudents } from "@/hooks/use-students";
+import AddStudentToCanteen from "../students/add-student";
 
-import studentsData from "@/data/students-data.json";
-
-type Item = {
+interface CanteenStudent {
   id: string;
-  name: string;
-  email: string;
-  location: string;
-  flag: string;
-  status: "Active" | "Inactive" | "Pending";
-  balance: number;
-};
+  schoolStudent: {
+    id: string;
+    name: string;
+    class: string;
+    gender: string;
+    matricule: string;
+  };
+  parent: {
+    user: {
+      email: string;
+    };
+  };
+  abonnements?: {
+    status: string;
+    startDate: string;
+    endDate: string;
+  }[];
+}
 
-// Custom filter function for multi-column searching
-const multiColumnFilterFn: FilterFn<Item> = (row, columnId, filterValue) => {
-  const searchableRowContent =
-    `${row.original.name} ${row.original.email}`.toLowerCase();
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableRowContent.includes(searchTerm);
-};
-
-const statusFilterFn: FilterFn<Item> = (
-  row,
-  columnId,
-  filterValue: string[]
-) => {
-  if (!filterValue?.length) return true;
-  const status = row.getValue(columnId) as string;
-  return filterValue.includes(status);
-};
-
-const columns: ColumnDef<Item>[] = [
+const columns: ColumnDef<CanteenStudent>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -147,69 +142,116 @@ const columns: ColumnDef<Item>[] = [
     enableHiding: false,
   },
   {
-    header: "Name",
-    accessorKey: "name",
+    // accessorKey: "name",
+    accessorFn: (row) => row.schoolStudent.name,
+    id: "name",
+    header: "Nom",
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("name")}</div>
+      <div className="font-medium">{row.original.schoolStudent.name}</div>
     ),
-    size: 180,
-    filterFn: multiColumnFilterFn,
+    size: 150,
     enableHiding: false,
   },
   {
-    header: "Email",
-    accessorKey: "email",
-    size: 220,
+    // accessorKey: "email",
+    accessorFn: (row) => row.parent.user.email,
+    id: "email",
+    header: "Email Parent",
+    cell: ({ row }) => <div>{row.original.parent.user.email}</div>,
+    size: 150,
   },
   {
-    header: "Location",
-    accessorKey: "location",
+    // accessorKey: "class",
+    accessorFn: (row) => row.schoolStudent.class,
+    id: "class",
+    header: "Classe",
     cell: ({ row }) => (
-      <div>
-        <span className="text-lg leading-none">{row.original.flag}</span>{" "}
-        {row.getValue("location")}
+      <div className="max-w-[300px] truncate">
+        {row.original.schoolStudent.class}
       </div>
     ),
-    size: 180,
+    size: 300,
   },
   {
-    header: "Status",
-    accessorKey: "status",
+    // accessorKey: "gender",
+    accessorFn: (row) =>
+      row.schoolStudent.gender === "M" ? "Masculin" : "Féminin",
+    id: "gender",
+    header: "Genre",
+    filterFn: (row, columnId, filterValue) => {
+      const value = row.getValue(columnId) as string;
+      return (filterValue as string[]).includes(value);
+    },
     cell: ({ row }) => (
-      <Badge
-        className={cn(
-          row.getValue("status") === "Inactive" &&
-            "bg-muted-foreground/60 text-primary-foreground"
-        )}
-      >
-        {row.getValue("status")}
+      <Badge variant="outline" className="capitalize">
+        {row.original.schoolStudent.gender === "M" ? "Masculin" : "Féminin"}
       </Badge>
     ),
-    size: 100,
-    filterFn: statusFilterFn,
+    size: 80,
   },
   {
-    header: "Performance",
-    accessorKey: "performance",
+    // accessorKey: "matricule",
+    accessorFn: (row) => row.schoolStudent.matricule,
+    id: "matricule",
+    header: "Matricule",
+    cell: ({ row }) => <div>{row.original.schoolStudent.matricule}</div>,
+    size: 80,
   },
   {
-    header: "Balance",
-    accessorKey: "balance",
+    // accessorKey: "status",
+    accessorFn: (row) => {
+      const hasActiveAbonnement = row.abonnements?.some(
+        (abonnement) => abonnement.status === "actif"
+      );
+      return hasActiveAbonnement ? "Actif" : "Inactif";
+    },
+    id: "status",
+    header: "Statut Abonnement",
+    filterFn: (row, columnId, filterValue) => {
+      const value = row.getValue(columnId) as string;
+      return (filterValue as string[]).includes(value);
+    },
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("balance"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-      return formatted;
+      const hasActiveAbonnement = row.original.abonnements?.some(
+        (abonnement) => abonnement.status === "actif"
+      );
+
+      return (
+        <Badge
+          variant={hasActiveAbonnement ? "default" : "secondary"}
+          className={cn(
+            !hasActiveAbonnement &&
+              "bg-muted-foreground/60 text-primary-foreground"
+          )}
+        >
+          {hasActiveAbonnement ? "Actif" : "Inactif"}
+        </Badge>
+      );
     },
     size: 120,
+  },
+  {
+    // accessorKey: "endDate",
+    id: "endDate",
+    header: "Date d'expiration",
+    cell: ({ row }) => {
+      const activeAbonnement = row.original.abonnements?.find(
+        (abonnement) => abonnement.status === "actif"
+      );
+
+      return activeAbonnement ? (
+        <div>{new Date(activeAbonnement.endDate).toLocaleDateString()}</div>
+      ) : (
+        <div className="text-muted-foreground">-</div>
+      );
+    },
+    size: 100,
   },
   {
     id: "actions",
     header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => <RowActions row={row} />,
-    size: 60,
+    size: 50,
     enableHiding: false,
   },
 ];
@@ -223,43 +265,32 @@ export default function StudentsDataTable() {
     pageSize: 10,
   });
   const inputRef = useRef<HTMLInputElement>(null);
-
   const [sorting, setSorting] = useState<SortingState>([
-    {
-      id: "name",
-      desc: false,
-    },
+    { id: "name", desc: false },
   ]);
 
-  const [data, setData] = useState<Item[]>([]);
+  const {
+    canteenStudents,
+    loading,
+    error,
+    setError,
+    getAllCanteenStudents,
+    pagination: contextPagination,
+  } = useStudents();
+
   useEffect(() => {
-    async function fetchPosts() {
-      // const res = await fetch(
-      //   "https://res.cloudinary.com/dlzlfasou/raw/upload/users-01_fertyx.json"
-      // )
-      // const data = await res.json()
-      // setData(data)
-      setData(
-        studentsData.map((student) => ({
-          ...student,
-          status: student.status as "Active" | "Inactive" | "Pending",
-        }))
-      );
-    }
-    fetchPosts();
-  }, []);
+    getAllCanteenStudents({
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+    });
+  }, [pagination.pageIndex, pagination.pageSize, getAllCanteenStudents]);
 
   const handleDeleteRows = () => {
-    const selectedRows = table.getSelectedRowModel().rows;
-    const updatedData = data.filter(
-      (item) => !selectedRows.some((row) => row.original.id === item.id)
-    );
-    setData(updatedData);
-    table.resetRowSelection();
+    // Implémentez la logique de suppression ici
   };
 
   const table = useReactTable({
-    data,
+    data: canteenStudents,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -271,6 +302,8 @@ export default function StudentsDataTable() {
     onColumnVisibilityChange: setColumnVisibility,
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    manualPagination: true,
+    pageCount: contextPagination.totalPages,
     state: {
       sorting,
       pagination,
@@ -279,31 +312,28 @@ export default function StudentsDataTable() {
     },
   });
 
-  // Get unique status values
-  const uniqueStatusValues = useMemo(() => {
-    const statusColumn = table.getColumn("status");
+  // Filtres pour le statut d'abonnement
+  const subscriptionStatusOptions = useMemo(() => ["Actif", "Inactif"], []);
 
-    if (!statusColumn) return [];
+  // Filtres pour le genre
+  const genderOptions = useMemo(() => ["Masculin", "Féminin"], []);
 
-    const values = Array.from(statusColumn.getFacetedUniqueValues().keys());
-
-    return values.sort();
-  }, [table.getColumn("status")?.getFacetedUniqueValues()]);
-
-  // Get counts for each status
-  const statusCounts = useMemo(() => {
-    const statusColumn = table.getColumn("status");
-    if (!statusColumn) return new Map();
-    return statusColumn.getFacetedUniqueValues();
-  }, [table.getColumn("status")?.getFacetedUniqueValues()]);
-
-  const selectedStatuses = useMemo(() => {
+  const selectedSubscriptionStatuses = useMemo(() => {
     const filterValue = table.getColumn("status")?.getFilterValue() as string[];
     return filterValue ?? [];
   }, [table.getColumn("status")?.getFilterValue()]);
 
-  const handleStatusChange = (checked: boolean, value: string) => {
-    const filterValue = table.getColumn("status")?.getFilterValue() as string[];
+  const selectedGenders = useMemo(() => {
+    const filterValue = table.getColumn("gender")?.getFilterValue() as string[];
+    return filterValue ?? [];
+  }, [table.getColumn("gender")?.getFilterValue()]);
+
+  const handleFilterChange = (
+    columnId: string,
+    checked: boolean,
+    value: string
+  ) => {
+    const filterValue = table.getColumn(columnId)?.getFilterValue() as string[];
     const newFilterValue = filterValue ? [...filterValue] : [];
 
     if (checked) {
@@ -316,9 +346,74 @@ export default function StudentsDataTable() {
     }
 
     table
-      .getColumn("status")
+      .getColumn(columnId)
       ?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
   };
+
+  // Squelette de chargement
+  if (loading && canteenStudents.length === 0) {
+    return (
+      <div className="space-y-4">
+        {/* Squelette pour les filtres */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center flex-wrap gap-3">
+            <Skeleton className="h-9 w-60" />
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-20" />
+          </div>
+          <Skeleton className="h-9 w-32" />
+        </div>
+
+        {/* Squelette pour le tableau */}
+        <div className="bg-background overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              {Array.from({ length: 9 }).map((_, i) => (
+                <TableHead key={i}>
+                  <Skeleton className="h-6 w-full" />
+                </TableHead>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 9 }).map((_, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className="h-6 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Squelette pour la pagination */}
+        <div className="flex flex-col gap-4 items-stretch @sm:flex-row @sm:items-center @sm:justify-between">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-9 w-64" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 p-8 text-center">
+        <CircleAlertIcon className="text-destructive" size={48} />
+        <h3 className="text-xl font-semibold">Erreur de chargement</h3>
+        <p className="text-muted-foreground">{error}</p>
+        <Button
+          onClick={async () => {
+            setError(null);
+            await getAllCanteenStudents();
+          }}
+        >
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -340,9 +435,9 @@ export default function StudentsDataTable() {
               onChange={(e) =>
                 table.getColumn("name")?.setFilterValue(e.target.value)
               }
-              placeholder="Filter by name or email..."
+              placeholder="Filtrer par nom..."
               type="text"
-              aria-label="Filter by name or email"
+              aria-label="Filtrer par nom"
             />
             <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
               <ListFilterIcon size={16} aria-hidden="true" />
@@ -362,7 +457,8 @@ export default function StudentsDataTable() {
               </button>
             )}
           </div>
-          {/* Filter by status */}
+
+          {/* Filter by subscription status */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline">
@@ -371,10 +467,10 @@ export default function StudentsDataTable() {
                   size={16}
                   aria-hidden="true"
                 />
-                Status
-                {selectedStatuses.length > 0 && (
+                Statut
+                {selectedSubscriptionStatuses.length > 0 && (
                   <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
-                    {selectedStatuses.length}
+                    {selectedSubscriptionStatuses.length}
                   </span>
                 )}
               </Button>
@@ -382,26 +478,23 @@ export default function StudentsDataTable() {
             <PopoverContent className="w-auto min-w-36 p-3" align="start">
               <div className="space-y-3">
                 <div className="text-muted-foreground text-xs font-medium">
-                  Filters
+                  Statut d&apos;abonnement
                 </div>
                 <div className="space-y-3">
-                  {uniqueStatusValues.map((value, i) => (
+                  {subscriptionStatusOptions.map((value, i) => (
                     <div key={value} className="flex items-center gap-2">
                       <Checkbox
-                        id={`${id}-${i}`}
-                        checked={selectedStatuses.includes(value)}
+                        id={`${id}-status-${i}`}
+                        checked={selectedSubscriptionStatuses.includes(value)}
                         onCheckedChange={(checked: boolean) =>
-                          handleStatusChange(checked, value)
+                          handleFilterChange("status", checked, value)
                         }
                       />
                       <Label
-                        htmlFor={`${id}-${i}`}
+                        htmlFor={`${id}-status-${i}`}
                         className="flex grow justify-between gap-2 font-normal"
                       >
-                        {value}{" "}
-                        <span className="text-muted-foreground ms-2 text-xs">
-                          {statusCounts.get(value)}
-                        </span>
+                        {value}
                       </Label>
                     </div>
                   ))}
@@ -409,6 +502,52 @@ export default function StudentsDataTable() {
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Filter by gender */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                <FilterIcon
+                  className="-ms-1 opacity-60"
+                  size={16}
+                  aria-hidden="true"
+                />
+                Genre
+                {selectedGenders.length > 0 && (
+                  <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
+                    {selectedGenders.length}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto min-w-36 p-3" align="start">
+              <div className="space-y-3">
+                <div className="text-muted-foreground text-xs font-medium">
+                  Genre
+                </div>
+                <div className="space-y-3">
+                  {genderOptions.map((value, i) => (
+                    <div key={value} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`${id}-gender-${i}`}
+                        checked={selectedGenders.includes(value)}
+                        onCheckedChange={(checked: boolean) =>
+                          handleFilterChange("gender", checked, value)
+                        }
+                      />
+                      <Label
+                        htmlFor={`${id}-gender-${i}`}
+                        className="flex grow justify-between gap-2 font-normal"
+                      >
+                        {value}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -418,11 +557,11 @@ export default function StudentsDataTable() {
                   size={16}
                   aria-hidden="true"
                 />
-                View
+                Colonnes
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
@@ -437,7 +576,13 @@ export default function StudentsDataTable() {
                       }
                       onSelect={(event) => event.preventDefault()}
                     >
-                      {column.id}
+                      {column.id === "name" && "Nom"}
+                      {column.id === "email" && "Email Parent"}
+                      {column.id === "class" && "Classe"}
+                      {column.id === "gender" && "Genre"}
+                      {column.id === "matricule" && "Matricule"}
+                      {column.id === "status" && "Statut"}
+                      {column.id === "endDate" && "Expiration"}
                     </DropdownMenuCheckboxItem>
                   );
                 })}
@@ -455,7 +600,7 @@ export default function StudentsDataTable() {
                     size={16}
                     aria-hidden="true"
                   />
-                  Delete
+                  Supprimer
                   <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
                     {table.getSelectedRowModel().rows.length}
                   </span>
@@ -495,15 +640,16 @@ export default function StudentsDataTable() {
               </AlertDialogContent>
             </AlertDialog>
           )}
-          {/* Add user button */}
-          <Button className="ml-auto" variant="outline">
+          {/* Add student button */}
+          <AddStudentToCanteen />
+          {/* <Button className="ml-auto" variant="outline">
             <PlusIcon
               className="-ms-1 opacity-60"
               size={16}
               aria-hidden="true"
             />
             Ajouter un élève
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -528,7 +674,6 @@ export default function StudentsDataTable() {
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={(e) => {
-                            // Enhanced keyboard handling for sorting
                             if (
                               header.column.getCanSort() &&
                               (e.key === "Enter" || e.key === " ")
@@ -595,7 +740,7 @@ export default function StudentsDataTable() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Aucun résultat trouvé.
+                  Aucun élève trouvé.
                 </TableCell>
               </TableRow>
             )}
@@ -653,12 +798,12 @@ export default function StudentsDataTable() {
                       table.getState().pagination.pageSize,
                     0
                   ),
-                  table.getRowCount()
+                  contextPagination.totalItems
                 )}
               </span>{" "}
               sur{" "}
               <span className="text-foreground">
-                {table.getRowCount().toString()}
+                {contextPagination.totalItems}
               </span>
             </p>
           </div>
@@ -674,7 +819,7 @@ export default function StudentsDataTable() {
                   size="icon"
                   variant="outline"
                   className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.firstPage()}
+                  onClick={() => table.setPageIndex(0)}
                   disabled={!table.getCanPreviousPage()}
                   aria-label="Aller à la première page"
                 >
@@ -713,7 +858,7 @@ export default function StudentsDataTable() {
                   size="icon"
                   variant="outline"
                   className="disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => table.lastPage()}
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                   disabled={!table.getCanNextPage()}
                   aria-label="Aller à la dernière page"
                 >
@@ -728,8 +873,7 @@ export default function StudentsDataTable() {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function RowActions({ row }: { row: Row<Item> }) {
+function RowActions({ row }: { row: Row<CanteenStudent> }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -738,7 +882,7 @@ function RowActions({ row }: { row: Row<Item> }) {
             size="icon"
             variant="ghost"
             className="shadow-none"
-            aria-label="Edit item"
+            aria-label="Actions"
           >
             <EllipsisIcon size={16} aria-hidden="true" />
           </Button>
@@ -747,41 +891,19 @@ function RowActions({ row }: { row: Row<Item> }) {
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <span>Edit</span>
-            <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
+            <span>Modifier</span>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <span>Duplicate</span>
-            <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+            <span>Voir les détails</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <span>Archive</span>
-            <DropdownMenuShortcut>⌘A</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>More</DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem>Move to project</DropdownMenuItem>
-                <DropdownMenuItem>Move to folder</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Advanced options</DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>Share</DropdownMenuItem>
-          <DropdownMenuItem>Add to favorites</DropdownMenuItem>
-        </DropdownMenuGroup>
+        <DropdownMenuItem>
+          <span>Gérer les abonnements</span>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-destructive focus:text-destructive">
-          <span>Delete</span>
-          <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+          <span>Désinscrire de la cantine</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

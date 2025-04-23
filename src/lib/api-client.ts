@@ -22,7 +22,6 @@ if (!API_BASE_URL) {
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
-
   const data: ApiResponse<T> = await response.json().catch(() => ({}));
 
   if (!response.ok) {
@@ -38,7 +37,9 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return data as T;
 }
 
-export const apiClient = {
+/*export const apiClient = {
+
+
   get: async (endpoint: string) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       credentials: "include", // Pour les cookies
@@ -71,11 +72,77 @@ export const apiClient = {
     return handleResponse(response);
   },
 
+  patch: async (endpoint: string, body: object) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      credentials: "include",
+    });
+    return handleResponse(response);
+  },
+
   delete: async (endpoint: string) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: "DELETE",
       credentials: "include",
     });
     return handleResponse(response);
+  },
+};
+*/
+export const apiClient = {
+  get: async <T>(endpoint: string): Promise<T> => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      credentials: "include", // Pour les cookies
+      cache: "no-store", // Pour éviter la mise en cache côté serveur
+    });
+    return handleResponse<T>(response); // Passe le type générique à handleResponse
+  },
+
+  post: async <T>(endpoint: string, body: object): Promise<T> => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      credentials: "include",
+    });
+    return handleResponse<T>(response);
+  },
+
+  put: async <T>(endpoint: string, body: object): Promise<T> => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      credentials: "include",
+    });
+    return handleResponse<T>(response);
+  },
+
+  patch: async <T>(endpoint: string, body: object): Promise<T> => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      credentials: "include",
+    });
+    return handleResponse<T>(response);
+  },
+
+  delete: async <T>(endpoint: string): Promise<T> => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    return handleResponse<T>(response);
   },
 };
