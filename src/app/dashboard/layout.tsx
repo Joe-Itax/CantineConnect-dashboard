@@ -3,36 +3,30 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { DashboardSkeleton } from "./skeleton";
+import { useAuthUserQuery } from "@/hooks/use-auth-user";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading, isInitialized } = useAuth();
+  const { data: user, isLoading, isError } = useAuthUserQuery();
   const router = useRouter();
 
-  // Redirection si non authentifié
-  useEffect(() => {
-    if (!isLoading && isInitialized && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, isLoading, isInitialized, router]);
-
-  // État de chargement
-  if (isLoading || !isInitialized) {
+  if (isLoading) {
     return <DashboardSkeleton />;
   }
 
-  // Si non authentifié (après vérification)
-  if (!isAuthenticated) {
+  if (!user || isError) {
+    router.push("/login");
     return null;
   }
 
+  console.log("user: ", user);
+
+  // Utilisateur authentifié -> affichage du dashboard
   return (
     <SidebarProvider
       style={

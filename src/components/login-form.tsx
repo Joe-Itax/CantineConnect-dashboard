@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useState,
+} from "react";
 
 import { cn } from "@/lib/utils";
 import { LoginSchema } from "@/lib/validators/login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/use-auth";
+import { useLoginMutation } from "@/hooks/use-auth-mutations";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
-  const { login, clearAlert } = useAuth();
+  const loginMutation = useLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPending, setIsPending] = useState(false);
@@ -22,10 +24,6 @@ export function LoginForm({
     password?: string[];
   }>({});
 
-  // Effacer/Nettoie l'alerte quand le composant est démonté
-  useEffect(() => {
-    return clearAlert;
-  }, [clearAlert]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +41,8 @@ export function LoginForm({
     setErrors({});
 
     try {
-      await login(email, password);
+      // await login(email, password);
+      await loginMutation.mutateAsync({ email, password });
     } catch (error: unknown) {
       console.error("Login error:", error);
     } finally {

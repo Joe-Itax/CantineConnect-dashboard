@@ -4,32 +4,23 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LinkIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
 
 import { LoginForm } from "@/components/login-form";
-import { useAuth } from "@/hooks/use-auth";
 import { DashboardSkeleton } from "../dashboard/skeleton";
+import { useAuthUserQuery } from "@/hooks/use-auth-user";
 
 export default function LoginPage() {
-  const { isAuthenticated, isLoading, isInitialized } = useAuth();
+  const { data: user, isLoading } = useAuthUserQuery();
   const router = useRouter();
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-  useEffect(() => {
-    if (!isLoading && isInitialized && isAuthenticated) {
-      router.push("/dashboard");
-    }
-  }, [isAuthenticated, isLoading, isInitialized, router]);
-
-  useEffect(() => {
-    if (!isLoading && isInitialized) {
-      setIsFirstLoad(false);
-    }
-  }, [isLoading, isInitialized]);
-
-  // Charger DashboardSkeleton uniquement au premier chargement de la page
-  if (isFirstLoad && (isLoading || !isInitialized)) {
+  if (isLoading) {
     return <DashboardSkeleton />;
+  }
+
+  if (user) {
+    router.push("/dashboard");
+    return null;
   }
 
   return (

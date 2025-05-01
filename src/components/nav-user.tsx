@@ -29,7 +29,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
-import { useAuth } from "@/hooks/use-auth";
+import { useLogoutMutation } from "@/hooks/use-auth-mutations";
 
 export function NavUser({
   user,
@@ -42,15 +42,14 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-  const { logout } = useAuth();
+  const logoutMutation = useLogoutMutation();
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
   const avatarFallback = user.name
     .split(" ")
     .map((name) => name[0])
     .join("");
-
-  // const handleLogout = () => {
-  //   logout();
-  // };
 
   return (
     <SidebarMenu>
@@ -112,7 +111,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>
+            <DropdownMenuItem onClick={handleLogout}>
               <IconLogout />
               Se deconnecter
             </DropdownMenuItem>

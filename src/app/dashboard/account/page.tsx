@@ -1,14 +1,12 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Button } from "@/components/ui/button";
-// import { useRouter } from "next/navigation";
 import EditProfile from "./edit-profile";
 import { Separator } from "@/components/ui/separator";
+import { useAuthUserQuery } from "@/hooks/use-auth-user";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { data: user } = useAuthUserQuery();
 
   if (!user) {
     return <div>Chargement du profil...</div>;

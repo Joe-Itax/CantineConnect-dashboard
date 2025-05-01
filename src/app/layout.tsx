@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/providers/auth-provider";
 import { NotificationManager } from "@/components/notification-manager";
-import { UserProvider } from "@/providers/user-provider";
-import { StudentProvider } from "@/providers/student-provider";
+import { ReactQueryProvider } from "@/providers/react-query-provider";
+
+// import { AuthProvider } from "@/providers/auth-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,14 +29,12 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AuthProvider>
-          <UserProvider>
-            <StudentProvider>
-              <NotificationManager />
-              {children}
-            </StudentProvider>
-          </UserProvider>
-        </AuthProvider>
+        <ReactQueryProvider>
+          {/* <AuthProvider> */}
+            <NotificationManager />
+            {children}
+          {/* </AuthProvider> */}
+        </ReactQueryProvider>
       </body>
     </html>
   );

@@ -1,21 +1,13 @@
-"use client";
+/*"use client";
 
 import { createContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
+import { User } from "@/types/user";
 
 interface ApiError {
   status: number;
   message: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  role: string;
-  name: string;
-  createdAt: string;
-  avatarUrl: string;
 }
 
 export interface AuthContextType {
@@ -228,3 +220,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+*/
+// "use client";
+
+// import { createContext, useContext, useState } from "react";
+
+// interface Alert {
+//   type: "success" | "error" | "info" | "note" | null;
+//   message: string | null;
+// }
+
+// interface AuthContextType {
+//   alert: Alert;
+//   setAlert: (type: NonNullable<Alert["type"]>, message: string) => void;
+//   clearAlert: () => void;
+// }
+
+// const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// export function AuthProvider({ children }: { children: React.ReactNode }) {
+//   const [alert, setAlertState] = useState<Alert>({ type: null, message: null });
+
+//   const setAlert = (type: NonNullable<Alert["type"]>, message: string) => {
+//     setAlertState({ type, message });
+//   };
+
+//   const clearAlert = () => {
+//     setAlertState({ type: null, message: null });
+//   };
+
+//   return (
+//     <AuthContext.Provider value={{ alert, setAlert, clearAlert }}>
+//       {children}
+//     </AuthContext.Provider>
+//   );
+// }
+
+// export function useAuthContext() {
+//   const context = useContext(AuthContext);
+//   if (!context) {
+//     throw new Error("useAuthContext doit être utilisé dans AuthProvider");
+//   }
+//   return context;
+// }

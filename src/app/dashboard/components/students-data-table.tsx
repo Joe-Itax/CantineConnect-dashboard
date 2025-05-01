@@ -93,12 +93,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useStudents } from "@/hooks/use-students";
 import AddStudentToCanteen from "../students/add-student";
+import {
+  useCanteenStudentsQuery,
+  useRemoveCanteenStudentMutation,
+} from "@/hooks/use-students";
+import ErrorThenRefresh from "./error";
+import LoadingDataTable from "./loading";
+import { useRouter } from "next/navigation";
 
 interface CanteenStudent {
   id: string;
-  schoolStudent: {
+  enrolledStudent: {
     id: string;
     name: string;
     class: string;
@@ -120,6 +126,7 @@ interface CanteenStudent {
 const columns: ColumnDef<CanteenStudent>[] = [
   {
     id: "select",
+    meta: { isDisplayColumn: true },
     header: ({ table }) => (
       <Checkbox
         checked={
@@ -142,18 +149,16 @@ const columns: ColumnDef<CanteenStudent>[] = [
     enableHiding: false,
   },
   {
-    // accessorKey: "name",
-    accessorFn: (row) => row.schoolStudent.name,
+    accessorFn: (row) => row.enrolledStudent.name,
     id: "name",
     header: "Nom",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.schoolStudent.name}</div>
+      <div className="font-medium">{row.original.enrolledStudent.name}</div>
     ),
     size: 150,
     enableHiding: false,
   },
   {
-    // accessorKey: "email",
     accessorFn: (row) => row.parent.user.email,
     id: "email",
     header: "Email Parent",
@@ -161,21 +166,19 @@ const columns: ColumnDef<CanteenStudent>[] = [
     size: 150,
   },
   {
-    // accessorKey: "class",
-    accessorFn: (row) => row.schoolStudent.class,
+    accessorFn: (row) => row.enrolledStudent.class,
     id: "class",
     header: "Classe",
     cell: ({ row }) => (
       <div className="max-w-[300px] truncate">
-        {row.original.schoolStudent.class}
+        {row.original.enrolledStudent.class}
       </div>
     ),
     size: 300,
   },
   {
-    // accessorKey: "gender",
     accessorFn: (row) =>
-      row.schoolStudent.gender === "M" ? "Masculin" : "Féminin",
+      row.enrolledStudent.gender === "M" ? "Masculin" : "Féminin",
     id: "gender",
     header: "Genre",
     filterFn: (row, columnId, filterValue) => {
@@ -184,21 +187,19 @@ const columns: ColumnDef<CanteenStudent>[] = [
     },
     cell: ({ row }) => (
       <Badge variant="outline" className="capitalize">
-        {row.original.schoolStudent.gender === "M" ? "Masculin" : "Féminin"}
+        {row.original.enrolledStudent.gender === "M" ? "Masculin" : "Féminin"}
       </Badge>
     ),
     size: 80,
   },
   {
-    // accessorKey: "matricule",
-    accessorFn: (row) => row.schoolStudent.matricule,
+    accessorFn: (row) => row.enrolledStudent.matricule,
     id: "matricule",
     header: "Matricule",
-    cell: ({ row }) => <div>{row.original.schoolStudent.matricule}</div>,
+    cell: ({ row }) => <div>{row.original.enrolledStudent.matricule}</div>,
     size: 80,
   },
   {
-    // accessorKey: "status",
     accessorFn: (row) => {
       const hasActiveAbonnement = row.abonnements?.some(
         (abonnement) => abonnement.status === "actif"
@@ -231,7 +232,14 @@ const columns: ColumnDef<CanteenStudent>[] = [
     size: 120,
   },
   {
-    // accessorKey: "endDate",
+    accessorFn: (row) => {
+      const activeAbonnement = row.abonnements?.find(
+        (abonnement) => abonnement.status === "actif"
+      );
+      return activeAbonnement
+        ? new Date(activeAbonnement.startDate).toLocaleDateString()
+        : null;
+    },
     id: "endDate",
     header: "Date d'expiration",
     cell: ({ row }) => {
@@ -249,6 +257,7 @@ const columns: ColumnDef<CanteenStudent>[] = [
   },
   {
     id: "actions",
+    meta: { isDisplayColumn: true },
     header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => <RowActions row={row} />,
     size: 50,
@@ -260,33 +269,32 @@ export default function StudentsDataTable() {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "name", desc: false },
   ]);
 
-  const {
-    canteenStudents,
-    loading,
-    error,
-    setError,
-    getAllCanteenStudents,
-    pagination: contextPagination,
-  } = useStudents();
+  const { data, isLoading, isError, pagination, setPage, setPageSize } =
+    useCanteenStudentsQuery();
 
-  useEffect(() => {
-    getAllCanteenStudents({
-      page: pagination.pageIndex + 1,
-      limit: pagination.pageSize,
-    });
-  }, [pagination.pageIndex, pagination.pageSize, getAllCanteenStudents]);
+  const totalItems = data?.totalItems || 0;
+  const canteenStudents = data?.data || [];
 
-  const handleDeleteRows = () => {
-    // Implémentez la logique de suppression ici
+  const removeCanteenStudentMutation = useRemoveCanteenStudentMutation();
+
+  const handleDeleteRows = async () => {
+    const selectedIds = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original.id);
+    if (selectedIds.length === 0) return;
+
+    try {
+      await removeCanteenStudentMutation.mutateAsync(selectedIds);
+      table.resetRowSelection(); // Désélectionner les lignes après suppression
+    } catch (error) {
+      console.error("Erreur lors de la désinscription multiple", error);
+    }
   };
 
   const table = useReactTable({
@@ -297,13 +305,18 @@ export default function StudentsDataTable() {
     onSortingChange: setSorting,
     enableSortingRemoval: false,
     getPaginationRowModel: getPaginationRowModel(),
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function" ? updater(pagination) : updater;
+      setPage(next.pageIndex);
+      setPageSize(next.pageSize);
+    },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: true,
-    pageCount: contextPagination.totalPages,
+    pageCount: data?.totalPages,
     state: {
       sorting,
       pagination,
@@ -350,69 +363,12 @@ export default function StudentsDataTable() {
       ?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
   };
 
-  // Squelette de chargement
-  if (loading && canteenStudents.length === 0) {
-    return (
-      <div className="space-y-4">
-        {/* Squelette pour les filtres */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center flex-wrap gap-3">
-            <Skeleton className="h-9 w-60" />
-            <Skeleton className="h-9 w-24" />
-            <Skeleton className="h-9 w-20" />
-          </div>
-          <Skeleton className="h-9 w-32" />
-        </div>
-
-        {/* Squelette pour le tableau */}
-        <div className="bg-background overflow-hidden rounded-md border">
-          <Table>
-            <TableHeader>
-              {Array.from({ length: 9 }).map((_, i) => (
-                <TableHead key={i}>
-                  <Skeleton className="h-6 w-full" />
-                </TableHead>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 10 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 9 }).map((_, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-6 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Squelette pour la pagination */}
-        <div className="flex flex-col gap-4 items-stretch @sm:flex-row @sm:items-center @sm:justify-between">
-          <Skeleton className="h-9 w-48" />
-          <Skeleton className="h-9 w-64" />
-        </div>
-      </div>
-    );
+  if (isLoading && canteenStudents.length === 0) {
+    return <LoadingDataTable />;
   }
 
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-4 p-8 text-center">
-        <CircleAlertIcon className="text-destructive" size={48} />
-        <h3 className="text-xl font-semibold">Erreur de chargement</h3>
-        <p className="text-muted-foreground">{error}</p>
-        <Button
-          onClick={async () => {
-            setError(null);
-            await getAllCanteenStudents();
-          }}
-        >
-          Réessayer
-        </Button>
-      </div>
-    );
+  if (isError) {
+    return <ErrorThenRefresh />;
   }
 
   return (
@@ -642,14 +598,6 @@ export default function StudentsDataTable() {
           )}
           {/* Add student button */}
           <AddStudentToCanteen />
-          {/* <Button className="ml-auto" variant="outline">
-            <PlusIcon
-              className="-ms-1 opacity-60"
-              size={16}
-              aria-hidden="true"
-            />
-            Ajouter un élève
-          </Button> */}
         </div>
       </div>
 
@@ -768,7 +716,7 @@ export default function StudentsDataTable() {
               <SelectValue placeholder="Sélectionner le nombre de résultats" />
             </SelectTrigger>
             <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
-              {[5, 10, 25, 50].map((pageSize) => (
+              {[10].map((pageSize) => (
                 <SelectItem
                   key={pageSize}
                   value={pageSize.toString()}
@@ -798,13 +746,10 @@ export default function StudentsDataTable() {
                       table.getState().pagination.pageSize,
                     0
                   ),
-                  contextPagination.totalItems
+                  totalItems
                 )}
               </span>{" "}
-              sur{" "}
-              <span className="text-foreground">
-                {contextPagination.totalItems}
-              </span>
+              sur <span className="text-foreground">{totalItems}</span>
             </p>
           </div>
         </div>
@@ -874,6 +819,22 @@ export default function StudentsDataTable() {
 }
 
 function RowActions({ row }: { row: Row<CanteenStudent> }) {
+  const removeCanteenStudentMutation = useRemoveCanteenStudentMutation();
+
+  const router = useRouter();
+
+  const handleRemove = async () => {
+    try {
+      await removeCanteenStudentMutation.mutateAsync([row.original.id]);
+    } catch (error) {
+      console.error("Erreur lors de la désinscription", error);
+    }
+  };
+
+  const openCanteenStudentDetails = () => {
+    router.push(`/dashboard/students/${row.original.id}`);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -890,21 +851,41 @@ function RowActions({ row }: { row: Row<CanteenStudent> }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <span>Modifier</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={openCanteenStudentDetails}>
             <span>Voir les détails</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <span>Gérer les abonnements</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive focus:text-destructive">
-          <span>Désinscrire de la cantine</span>
-        </DropdownMenuItem>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <span>Désinscrire de la cantine</span>
+            </DropdownMenuItem>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la désinscription</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir désinscrire{" "}
+                {row.original.enrolledStudent.name} de la cantine ?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleRemove}
+                disabled={removeCanteenStudentMutation.isPending}
+              >
+                {removeCanteenStudentMutation.isPending
+                  ? "En cours..."
+                  : "Confirmer"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DropdownMenuContent>
     </DropdownMenu>
   );
