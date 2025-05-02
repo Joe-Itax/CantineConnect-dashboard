@@ -28,9 +28,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 // import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenuShortcut } from "@/components/ui/dropdown-menu";
+import { useAuthUserQuery } from "@/hooks/use-auth-user";
 
 const initialAvatarImage = [
   {
@@ -44,7 +44,7 @@ const initialAvatarImage = [
 
 export default function EditStudent() {
   const id = useId();
-  const { user } = useAuth();
+  const { data: user } = useAuthUserQuery();
   const maxLength = 180;
   const { value, characterCount, handleChange } = useCharacterLimit({
     maxLength,
@@ -200,7 +200,7 @@ function AvatarSection() {
     initialFiles: initialAvatarImage,
   });
 
-  const { user } = useAuth();
+  const { data: user } = useAuthUserQuery();
   const avatarFallback = user?.name
     .split(" ")
     .map((name) => name[0])
