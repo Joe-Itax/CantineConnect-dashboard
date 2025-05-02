@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toJpeg } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,15 +10,14 @@ import { QRCodeSVG } from "qrcode.react";
 import { MoveLeftIcon, DownloadIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function CanteenStudent({
-  params,
-}: {
-  params: { "canteen-student-id": string };
-}) {
-  const id = params["canteen-student-id"];
+export default function CanteenStudent() {
+  const params = useParams<{
+    canteenStudentId: string;
+  }>();
+  const canteenStudentId = params.canteenStudentId;
   const router = useRouter();
 
-  const { data, isLoading } = useCanteenStudentByIdQuery(id);
+  const { data, isLoading } = useCanteenStudentByIdQuery(canteenStudentId);
   const student = data;
   const abonnement = student?.abonnements?.[0];
 
