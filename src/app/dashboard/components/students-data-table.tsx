@@ -102,31 +102,11 @@ import ErrorThenRefresh from "./error";
 import LoadingDataTable from "./loading";
 import { useRouter } from "next/navigation";
 
-interface CanteenStudent {
-  id: string;
-  enrolledStudent: {
-    id: string;
-    name: string;
-    class: string;
-    gender: string;
-    matricule: string;
-  };
-  parent: {
-    user: {
-      email: string;
-    };
-  };
-  abonnements?: {
-    status: string;
-    startDate: string;
-    endDate: string;
-  }[];
-}
+import type { CanteenStudent } from "@/types/student";
 
 const columns: ColumnDef<CanteenStudent>[] = [
   {
     id: "select",
-    meta: { isDisplayColumn: true },
     header: ({ table }) => (
       <Checkbox
         checked={

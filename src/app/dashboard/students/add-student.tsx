@@ -44,6 +44,9 @@ export default function AddStudentToCanteen() {
     Option[]
   >([]);
 
+  // State pour les parents trouvés via recherche
+  const [foundParentOptions, setFoundParentOptions] = useState<Option[]>([]);
+
   useEffect(() => {
     if (enrolledStudents.length > 0) {
       const options = enrolledStudents.map((student) => ({
@@ -56,23 +59,20 @@ export default function AddStudentToCanteen() {
     }
   }, [enrolledStudents]);
 
-  const parentOptions: Option[] = users
-    .filter((user) => user.role === "parent")
-    .map((parent) => ({
-      value: parent.id,
-      label: `${parent.name} (${parent.email})`,
-    }));
+  // Options parents combinant users initiaux et parents trouvés via recherche
+  const parentOptions = [
+    ...users
+      .filter((user) => user.role === "parent")
+      .map((parent) => ({
+        value: parent.id,
+        label: `${parent.name} (${parent.email})`,
+      })),
+    ...foundParentOptions,
+  ];
 
   const handleSubmit = async () => {
     if (selectedEnrolledStudents.length === 0 || !selectedParent) {
       show("error", "Veuillez sélectionner au moins un élève et un parent");
-      return;
-    }
-
-    const parentData = users.find((user) => user.id === selectedParent.value);
-
-    if (!parentData) {
-      show("error", "Parent introuvable");
       return;
     }
 
@@ -81,8 +81,9 @@ export default function AddStudentToCanteen() {
         enrolledStudentIds: selectedEnrolledStudents.map(
           (student) => student.value
         ),
-        parentId: parentData.id,
+        parentId: selectedParent.value,
       });
+
       setSelectedEnrolledStudents([]);
       setSelectedParent(null);
       setOpenDialog(false);
@@ -106,7 +107,7 @@ export default function AddStudentToCanteen() {
           <DialogTitle>Ajouter des élèves à la Cantine</DialogTitle>
         </DialogHeader>
         <div className="space-y-10 px-6 py-4">
-          {/* Sélectionner un ou plusieurs élèves */}
+          {/* Sélection des élèves */}
           <div className="space-y-2">
             <Label>Sélectionner un ou plusieurs élèves</Label>
             <MultipleSelector
@@ -123,21 +124,8 @@ export default function AddStudentToCanteen() {
                 <p className="text-center text-sm">Recherche...</p>
               }
               onSearch={async (query: string) => {
-                if (!query.trim()) {
-                  return initialEnrolledStudentOptions;
-                }
+                if (!query.trim()) return initialEnrolledStudentOptions;
 
-                // Filtrage local d'abord
-                const localResults = enrolledStudentOptions.filter((option) =>
-                  option.label.toLowerCase().includes(query.toLowerCase())
-                );
-
-                if (localResults.length > 0) {
-                  setEnrolledStudentOptions(localResults);
-                  return localResults;
-                }
-
-                // Si rien en local, faire la recherche backend
                 try {
                   const students =
                     await searchEnrolledStudentsMutation.mutateAsync(query);
@@ -146,7 +134,6 @@ export default function AddStudentToCanteen() {
                     label: `${student.name} (${student.matricule}) - ${student.class}`,
                     disable: student.isRegisteredToCanteen,
                   }));
-                  setEnrolledStudentOptions(options);
                   return options;
                 } catch (error) {
                   console.error("Erreur de recherche élève:", error);
@@ -156,7 +143,7 @@ export default function AddStudentToCanteen() {
             />
           </div>
 
-          {/* Sélectionner un parent */}
+          {/* Sélection du parent */}
           <div className="space-y-2">
             <Label>Sélectionner un parent</Label>
             <MultipleSelector
@@ -173,31 +160,29 @@ export default function AddStudentToCanteen() {
                 <p className="text-center text-sm">Recherche...</p>
               }
               onSearch={async (query: string) => {
-                if (!query.trim()) {
-                  return parentOptions;
-                }
+                if (!query.trim()) return parentOptions;
 
-                // Filtrage local d'abord
-                const localResults = parentOptions.filter((option) =>
-                  option.label.toLowerCase().includes(query.toLowerCase())
-                );
-
-                if (localResults.length > 0) {
-                  return localResults;
-                }
-
-                // Si rien en local, faire la recherche backend
                 try {
                   const users = await searchUsersMutation.mutateAsync(query);
-                  const options = users
+                  const newParentOptions = users
                     .filter((user: User) => user.role === "parent")
                     .map((user: User) => ({
                       value: user.id,
-                      label: `${user.name} - (${user.email})`,
+                      label: `${user.name} (${user.email})`,
                     }));
-                  return options;
+
+                  // Ajout les nouveaux parents trouvés au state
+                  setFoundParentOptions((prev) => [
+                    ...prev,
+                    ...newParentOptions.filter(
+                      (newOption: { value: string }) =>
+                        !prev.some((p) => p.value === newOption.value)
+                    ),
+                  ]);
+
+                  return newParentOptions;
                 } catch (error) {
-                  console.error("Erreur de recherche élève:", error);
+                  console.error("Erreur de recherche parent:", error);
                   return [];
                 }
               }}

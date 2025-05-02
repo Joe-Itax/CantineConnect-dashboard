@@ -25,12 +25,13 @@ export default function LoadingDataTable() {
       <div className="bg-background overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
-            {Array.from({ length: 9 }).map((_, i) => (
-              <TableHead key={i}>
-                <Skeleton className="h-6 w-full" />
-                <span className="invisible">Colonne {i +1}</span>
-              </TableHead>
-            ))}
+            <TableRow>
+              {Array.from({ length: 9 }).map((_, i) => (
+                <TableHead key={i}>
+                  <Skeleton className="h-6 w-full" />
+                </TableHead>
+              ))}
+            </TableRow>
           </TableHeader>
           <TableBody>
             {Array.from({ length: 10 }).map((_, i) => (

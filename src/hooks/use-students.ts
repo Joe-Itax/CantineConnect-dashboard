@@ -166,13 +166,17 @@ export function useCanteenStudentByIdQuery(id: string) {
   return useQuery({
     queryKey: ["canteen-student", id],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/students/canteen/${id}`,
-        { credentials: "include" }
-      );
-      if (!res.ok) throw new Error("Erreur récupération élève");
-      const data = await res.json();
-      return data.data;
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/students/canteen/${id}`,
+          { credentials: "include" }
+        );
+        if (!res.ok) throw new Error("Erreur récupération élève");
+        const data = await res.json();
+        return data;
+      } catch (error) {
+        console.error(`Erreur: `, error);
+      }
     },
   });
 }

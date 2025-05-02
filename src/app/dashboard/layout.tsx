@@ -24,9 +24,6 @@ export default function DashboardLayout({
     return null;
   }
 
-  console.log("user: ", user);
-
-  // Utilisateur authentifié -> affichage du dashboard
   return (
     <SidebarProvider
       style={

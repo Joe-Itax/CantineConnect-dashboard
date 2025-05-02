@@ -19,6 +19,16 @@ export interface CanteenStudent {
   createdAt: string;
   updatedAt: string;
   enrolledStudent: EnrolledStudent;
+  parent: {
+    user: {
+      email: string;
+    };
+  };
+  abonnements?: {
+    status: string;
+    startDate: string;
+    endDate: string;
+  }[];
 }
 
 // Typage d'une notification

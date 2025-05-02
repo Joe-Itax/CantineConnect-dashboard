@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LinkIcon } from "lucide-react";
 // import { useEffect, useState } from "react";
@@ -11,16 +10,10 @@ import { DashboardSkeleton } from "../dashboard/skeleton";
 import { useAuthUserQuery } from "@/hooks/use-auth-user";
 
 export default function LoginPage() {
-  const { data: user, isLoading } = useAuthUserQuery();
-  const router = useRouter();
+  const { isLoading } = useAuthUserQuery();
 
   if (isLoading) {
     return <DashboardSkeleton />;
-  }
-
-  if (user) {
-    router.push("/dashboard");
-    return null;
   }
 
   return (

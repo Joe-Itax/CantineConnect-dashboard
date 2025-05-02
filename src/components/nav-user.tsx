@@ -29,7 +29,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
-import { useLogoutMutation } from "@/hooks/use-auth-mutations";
+import { useLogoutMutation } from "@/hooks/use-auth-user";
 
 export function NavUser({
   user,

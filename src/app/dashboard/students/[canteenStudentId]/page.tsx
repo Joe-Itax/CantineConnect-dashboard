@@ -18,7 +18,7 @@ export default function CanteenStudent() {
   const router = useRouter();
 
   const { data, isLoading } = useCanteenStudentByIdQuery(canteenStudentId);
-  const student = data;
+  const student = data?.data;
   const abonnement = student?.abonnements?.[0];
 
   const qrRef = useRef<HTMLDivElement>(null);
@@ -60,7 +60,7 @@ export default function CanteenStudent() {
   if (!student) {
     return (
       <section className="p-6 max-w-4xl mx-auto">
-        <p>Élève non trouvé</p>
+        <p>{data.message || `Élève non trouvé`}</p>
       </section>
     );
   }

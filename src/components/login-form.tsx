@@ -9,7 +9,7 @@ import { LoginSchema } from "@/lib/validators/login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLoginMutation } from "@/hooks/use-auth-mutations";
+import { useLoginMutation } from "@/hooks/use-auth-user";
 
 export function LoginForm({
   className,
@@ -41,7 +41,6 @@ export function LoginForm({
     setErrors({});
 
     try {
-      // await login(email, password);
       await loginMutation.mutateAsync({ email, password });
     } catch (error: unknown) {
       console.error("Login error:", error);
