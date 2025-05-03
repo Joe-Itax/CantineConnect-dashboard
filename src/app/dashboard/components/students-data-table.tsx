@@ -93,10 +93,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "use-debounce";
+import { useSearchUsersMutation } from "@/hooks/use-users";
+
 import AddStudentToCanteen from "../students/add-student";
 import {
   useCanteenStudentsQuery,
   useRemoveCanteenStudentMutation,
+  useSearchCanteenStudentsMutation,
 } from "@/hooks/use-students";
 import ErrorThenRefresh from "./error";
 import LoadingDataTable from "./loading";
@@ -250,16 +254,45 @@ export default function StudentsDataTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery] = useDebounce(searchQuery, 1000);
+  const searchCanteenStudentsMutation = useSearchCanteenStudentsMutation();
+
+  console.log("searchCanteenStudentsMutation: ", searchCanteenStudentsMutation);
+
+  useEffect(() => {
+    if (debouncedQuery) {
+      searchCanteenStudentsMutation.mutate(debouncedQuery);
+    } else {
+      searchCanteenStudentsMutation.reset();
+    }
+  }, [debouncedQuery]);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "name", desc: false },
   ]);
 
-  const { data, isLoading, isError, pagination, setPage, setPageSize } =
-    useCanteenStudentsQuery();
+  const {
+    data: dataUseCanteenStudentsQuery,
+    isLoading,
+    isError,
+    pagination,
+    setPage,
+    setPageSize,
+  } = useCanteenStudentsQuery();
 
-  const totalItems = data?.totalItems || 0;
-  const canteenStudents = data?.data || [];
+  const totalItems =
+    (searchCanteenStudentsMutation.data?.totalItems ??
+      dataUseCanteenStudentsQuery?.totalItems) ||
+    0;
+  const totalPages =
+    (searchCanteenStudentsMutation.data?.totalPages ??
+      dataUseCanteenStudentsQuery?.totalPages) ||
+    1;
+
+  const canteenStudents = dataUseCanteenStudentsQuery?.data || [];
+  const students = searchCanteenStudentsMutation?.data?.data ?? canteenStudents;
 
   const removeCanteenStudentMutation = useRemoveCanteenStudentMutation();
 
@@ -278,7 +311,7 @@ export default function StudentsDataTable() {
   };
 
   const table = useReactTable({
-    data: canteenStudents,
+    data: students,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -296,7 +329,7 @@ export default function StudentsDataTable() {
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: true,
-    pageCount: data?.totalPages,
+    pageCount: totalPages,
     state: {
       sorting,
       pagination,
@@ -356,7 +389,7 @@ export default function StudentsDataTable() {
       {/* Filters */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center flex-wrap gap-3">
-          {/* Filter by name or email */}
+          {/* Filter by name, class or matricule */}
           <div className="relative">
             <Input
               id={`${id}-input`}
@@ -365,29 +398,30 @@ export default function StudentsDataTable() {
                 "peer min-w-60 ps-9",
                 Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
               )}
-              value={
-                (table.getColumn("name")?.getFilterValue() ?? "") as string
-              }
-              onChange={(e) =>
-                table.getColumn("name")?.setFilterValue(e.target.value)
-              }
-              placeholder="Filtrer par nom..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Filtrer par nom, classe ou matricule..."
               type="text"
               aria-label="Filtrer par nom"
             />
             <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
               <ListFilterIcon size={16} aria-hidden="true" />
+              {searchCanteenStudentsMutation.isPending && (
+                <div
+                  className="absolute inset-y-0 start-2 top-1/2
+              -translate-y-1/2 focus:z-10 pointer-events-none size-6 animate-spin rounded-full border-3 border-primary border-t-transparent"
+                ></div>
+              )}
             </div>
-            {Boolean(table.getColumn("name")?.getFilterValue()) && (
+
+            {searchQuery && (
               <button
                 className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Clear filter"
                 onClick={() => {
-                  table.getColumn("name")?.setFilterValue("");
-                  if (inputRef.current) {
-                    inputRef.current.focus();
-                  }
+                  setSearchQuery("");
+                  if (inputRef.current) inputRef.current.focus();
                 }}
+                aria-label="Effacer la recherche"
               >
                 <CircleXIcon size={16} aria-hidden="true" />
               </button>

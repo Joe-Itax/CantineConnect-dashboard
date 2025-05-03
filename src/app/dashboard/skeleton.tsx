@@ -5,7 +5,7 @@ export function DashboardSkeleton() {
     <div className="flex h-screen w-full fixed overflow-hidden">
       {/* Spinner Centré */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
 
       {/* Sidebar */}

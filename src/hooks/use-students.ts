@@ -162,6 +162,29 @@ export function useCanteenStudentsQuery() {
   };
 }
 
+export function useSearchCanteenStudentsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (query: string) => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/students/canteen/search?query=${query}`,
+        { credentials: "include" }
+      );
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(
+          `Erreur recherche des élèves inscrits. Erreur: `,
+          data.message
+        );
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["canteen-students"], data.data);
+    },
+  });
+}
+
 export function useCanteenStudentByIdQuery(id: string) {
   return useQuery({
     queryKey: ["canteen-student", id],
