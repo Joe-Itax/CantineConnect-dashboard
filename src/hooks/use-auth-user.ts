@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNotification } from "@/hooks/use-notification";
 import { User } from "@/types/user";
 import { useMutation } from "@tanstack/react-query";
@@ -26,8 +26,11 @@ export function useAuthUserQuery() {
       show("note", `Connecté en tant que ${data.user.name}`);
       return data.user as User;
     },
+
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -57,7 +60,7 @@ export function useLoginMutation() {
     onSuccess: (data) => {
       revalidateAuthUser();
       show("success", data.message || "Connecté avec succès !");
-      router.push("/dashboard");
+      router.replace("/dashboard");
     },
     onError: (error: Error) => {
       show(
@@ -73,6 +76,7 @@ export function useLoginMutation() {
 export function useLogoutMutation() {
   const router = useRouter();
   const { show } = useNotification();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
@@ -91,7 +95,10 @@ export function useLogoutMutation() {
     onSuccess: () => {
       show("note", "Déconnexion...");
       revalidateAuthUser();
-      router.push("/login");
+      queryClient.removeQueries({ queryKey: ["auth-user"] });
+      setTimeout(() => {
+        router.replace("/login");
+      }, 100);
     },
     onError: (error) => {
       show(

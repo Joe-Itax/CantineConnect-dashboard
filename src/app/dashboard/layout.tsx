@@ -3,25 +3,18 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useRouter } from "next/navigation";
 import { DashboardSkeleton } from "./skeleton";
-import { useAuthUserQuery } from "@/hooks/use-auth-user";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: user, isLoading, isError } = useAuthUserQuery();
-  const router = useRouter();
+  const { isLoading } = useAuthRedirect({ ifUnauthenticated: "/login" });
 
   if (isLoading) {
     return <DashboardSkeleton />;
-  }
-
-  if (!user || isError) {
-    router.push("/login");
-    return null;
   }
 
   return (

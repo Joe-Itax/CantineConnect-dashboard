@@ -258,8 +258,6 @@ export default function StudentsDataTable() {
   const [debouncedQuery] = useDebounce(searchQuery, 1000);
   const searchCanteenStudentsMutation = useSearchCanteenStudentsMutation();
 
-  console.log("searchCanteenStudentsMutation: ", searchCanteenStudentsMutation);
-
   useEffect(() => {
     if (debouncedQuery) {
       searchCanteenStudentsMutation.mutate(debouncedQuery);
