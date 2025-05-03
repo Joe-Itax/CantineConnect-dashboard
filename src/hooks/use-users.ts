@@ -1,8 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "@/types/user";
 import { useNotification } from "./use-notification";
+import { useState } from "react";
+
+interface GetUsersResponse {
+  totalItems: number;
+  limitPerPage: number;
+  totalPages: number;
+  currentPage: number;
+  data: User[];
+}
 
 // Récupérer tous les users
+/*
 export function useUsersQuery() {
   return useQuery<User[]>({
     queryKey: ["users"],
@@ -17,21 +27,86 @@ export function useUsersQuery() {
     staleTime: 5 * 60 * 1000,
   });
 }
+*/
+export function useUsersQuery() {
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const query = useQuery<GetUsersResponse>({
+    queryKey: ["users", pagination.pageIndex, pagination.pageSize],
+    queryFn: async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/users?page=${
+            pagination.pageIndex + 1
+          }&limit=${pagination.pageSize}`,
+          {
+            credentials: "include",
+          }
+        );
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error(
+            data.message || "Erreur lors du fetch des utilisateurs: ",
+            data
+          );
+          throw new Error("Erreur lors du chargement des élèves cantine.");
+        }
+        return data;
+      } catch (error) {
+        console.error("Erreur lors du fetch des utilisateurs: ", error);
+        throw error;
+      }
+    },
+    placeholderData: (previousData) => previousData,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const setPage = (pageIndex: number) => {
+    setPagination((prev) => ({
+      ...prev,
+      pageIndex,
+    }));
+  };
+
+  const setPageSize = (pageSize: number) => {
+    setPagination((prev) => ({
+      ...prev,
+      pageSize,
+    }));
+  };
+
+  return {
+    ...query,
+    pagination,
+    setPage,
+    setPageSize,
+  };
+}
 
 // Récupérer un user par son id
 export function useUserQuery(userId: string) {
   return useQuery<User>({
     queryKey: ["user", userId],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${userId}`,
-        {
-          credentials: "include",
-        }
-      );
-      if (!res.ok) throw new Error("Erreur lors du fetch de l'utilisateur");
-      const data = await res.json();
-      return data.data;
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${userId}`,
+          {
+            credentials: "include",
+          }
+        );
+        if (!res.ok) throw new Error("Erreur lors du fetch de l'utilisateur");
+        const data = await res.json();
+
+        return data.user;
+      } catch (error) {
+        console.error("Erreur lors du fetch de l'utilisateur: ", error);
+        throw error;
+      }
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
@@ -98,21 +173,22 @@ export function useDeleteUserMutation() {
 // Rechercher des users
 export function useSearchUsersMutation() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (query: string) => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/search?query=${query}`,
-        {
-          credentials: "include",
-        }
+        { credentials: "include" }
       );
-      if (!res.ok) throw new Error("Erreur lors de la recherche");
       const data = await res.json();
-      return data.data;
+      if (!res.ok)
+        throw new Error(
+          `Erreur recherche d'utilisateurs. Erreur: `,
+          data.message
+        );
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+    onSuccess: (data) => {
+      queryClient.setQueryData(["users"], data.data);
     },
   });
 }

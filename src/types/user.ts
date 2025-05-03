@@ -4,5 +4,6 @@ export interface User {
   role: string;
   name: string;
   createdAt: string;
+  updatedAt: string;
   avatarUrl: string;
 }

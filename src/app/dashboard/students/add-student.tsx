@@ -26,8 +26,10 @@ import { useNotification } from "@/hooks/use-notification";
 export default function AddStudentToCanteen() {
   const { show } = useNotification();
   const [openDialog, setOpenDialog] = useState(false);
-  const { data: users = [] } = useUsersQuery();
+  const { data } = useUsersQuery();
   const { data: enrolledStudents = [] } = useEnrolledStudentsQuery();
+
+  const users = data?.data || [];
 
   const searchEnrolledStudentsMutation = useSearchEnrolledStudentsMutation();
   const addCanteenStudentMutation = useAddCanteenStudentMutation();
@@ -129,6 +131,7 @@ export default function AddStudentToCanteen() {
                 try {
                   const students =
                     await searchEnrolledStudentsMutation.mutateAsync(query);
+
                   const options = students.map((student) => ({
                     value: student.id,
                     label: `${student.name} (${student.matricule}) - ${student.class}`,
@@ -164,7 +167,7 @@ export default function AddStudentToCanteen() {
 
                 try {
                   const users = await searchUsersMutation.mutateAsync(query);
-                  const newParentOptions = users
+                  const newParentOptions = users.data
                     .filter((user: User) => user.role === "parent")
                     .map((user: User) => ({
                       value: user.id,

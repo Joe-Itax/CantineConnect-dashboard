@@ -5,8 +5,10 @@ import {
   IconChartBar,
   IconDashboard,
   IconFolder,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   IconListDetails,
   IconSettings,
+  IconUsersGroup,
   IconUsers,
 } from "@tabler/icons-react";
 
@@ -38,9 +40,14 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "/l",
-      icon: IconListDetails,
+      title: "Elèves",
+      url: "/dashboard/students",
+      icon: IconUsersGroup,
+    },
+    {
+      title: "Users",
+      url: "/dashboard/users",
+      icon: IconUsers,
     },
     {
       title: "Analytics",
@@ -51,11 +58,6 @@ const data = {
       title: "Projects",
       url: "/p",
       icon: IconFolder,
-    },
-    {
-      title: "Elèves",
-      url: "/dashboard/students",
-      icon: IconUsers,
     },
   ],
   navSecondary: [

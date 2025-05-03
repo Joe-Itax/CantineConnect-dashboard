@@ -127,10 +127,18 @@ export function useCanteenStudentsQuery() {
             credentials: "include",
           }
         );
+
+        const data = await res.json();
+
         if (!res.ok) {
+          console.error(
+            data.message || "Erreur lors du chargement des élèves cantine.",
+            data
+          );
           throw new Error("Erreur lors du chargement des élèves cantine.");
         }
-        return res.json();
+
+        return data;
       } catch (error) {
         console.error("Erreur lors du chargement des élèves cantine: ", error);
         throw error;
@@ -348,14 +356,21 @@ export function useCanteenStudentsByParentQuery(parentId: string) {
   return useQuery({
     queryKey: ["canteen-students-by-parent", parentId],
     queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/students/canteen/by-parent/${parentId}`,
-        { credentials: "include" }
-      );
-      if (!res.ok) throw new Error("Erreur élèves par parent");
-      const data = await res.json();
-      return data.data as CanteenStudent[];
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/students/canteen/by-parent/${parentId}`,
+          { credentials: "include" }
+        );
+        if (!res.ok) throw new Error("Erreur élèves par parent");
+        const data = await res.json();
+        return data.data as CanteenStudent[];
+      } catch (error) {
+        console.error("Erreur lors du chargement des élèves cantine: ", error);
+        throw error;
+      }
     },
+    placeholderData: (previousData) => previousData,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
