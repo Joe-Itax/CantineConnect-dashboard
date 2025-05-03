@@ -2,18 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LinkIcon } from "lucide-react";
-// import { useEffect, useState } from "react";
 
 import { LoginForm } from "@/components/login-form";
 import { DashboardSkeleton } from "../dashboard/skeleton";
 import { useAuthUserQuery } from "@/hooks/use-auth-user";
 
 export default function LoginPage() {
-  const { isLoading } = useAuthUserQuery();
+  const { data: user, isLoading } = useAuthUserQuery();
 
   if (isLoading) {
     return <DashboardSkeleton />;
+  }
+
+  if (user) {
+    redirect("/dashboard");
   }
 
   return (

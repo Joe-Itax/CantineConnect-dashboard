@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { DashboardSkeleton } from "@/app/dashboard/skeleton";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  const router = useRouter();
-
   useEffect(() => {
-    router.replace("/dashboard");
-  }, [router]);
+    redirect("/dashboard");
+  }, []);
 
-  return <DashboardSkeleton />;
+  return;
 }
