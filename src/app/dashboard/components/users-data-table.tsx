@@ -24,11 +24,13 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
+  CircleAlertIcon,
   CircleXIcon,
   Columns3Icon,
   EllipsisIcon,
   FilterIcon,
   ListFilterIcon,
+  TrashIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -66,7 +68,11 @@ import {
 } from "@/components/ui/table";
 import { useDebounce } from "use-debounce";
 import { useRouter } from "next/navigation";
-import { useUsersQuery, useSearchUsersMutation } from "@/hooks/use-users";
+import {
+  useUsersQuery,
+  useSearchUsersMutation,
+  useDeleteUserMutation,
+} from "@/hooks/use-users";
 import LoadingDataTable from "./loading";
 import ErrorThenRefresh from "./error";
 
@@ -79,6 +85,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import AddUser from "../users/add-user";
 
 const columns: ColumnDef<User>[] = [
   {
@@ -107,7 +125,11 @@ const columns: ColumnDef<User>[] = [
   {
     accessorKey: "name",
     header: "Nom",
-    cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
+    cell: ({ row }) => (
+      <div className={`font-medium ${!row.original.isActive && "bg-red-500"}`}>
+        {row.original.name}
+      </div>
+    ),
     size: 150,
     enableHiding: false,
   },
@@ -151,7 +173,7 @@ const columns: ColumnDef<User>[] = [
   {
     accessorFn: (row) => new Date(row.updatedAt),
     id: "updatedAt",
-    header: "Dernière mise à jour",
+    header: "Date de mise à jour",
     cell: ({ row }) => (
       <div>{new Date(row.original.updatedAt).toLocaleDateString()}</div>
     ),
@@ -400,6 +422,62 @@ export default function UsersDataTable() {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        <div className="flex items-center gap-3">
+          {/* Delete button */}
+          {table.getSelectedRowModel().rows.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="ml-auto" variant="outline">
+                  <TrashIcon
+                    className="-ms-1 opacity-60"
+                    size={16}
+                    aria-hidden="true"
+                  />
+                  Supprimer
+                  <span className="bg-background text-muted-foreground/70 -me-1 inline-flex h-5 max-h-full items-center rounded border px-1 font-[inherit] text-[0.625rem] font-medium">
+                    {table.getSelectedRowModel().rows.length}
+                  </span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                  <div
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                    aria-hidden="true"
+                  >
+                    <CircleAlertIcon className="opacity-80" size={16} />
+                  </div>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Etes-vous sûr de vouloir supprimer?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action ne peut pas être annulée. Cela supprimera
+                      définitivement {table.getSelectedRowModel().rows.length}{" "}
+                      {table.getSelectedRowModel().rows.length === 1
+                        ? "élève"
+                        : "élèves"}{" "}
+                      {table.getSelectedRowModel().rows.length === 1
+                        ? "sélectionné"
+                        : "sélectionnés"}
+                      .
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                  //   onClick={handleDeleteRows}
+                  >
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          {/* Add User button */}
+          <AddUser />
+        </div>
       </div>
 
       {/* Table */}
@@ -610,7 +688,16 @@ export default function UsersDataTable() {
 }
 
 function RowActions({ row }: { row: Row<User> }) {
+  const deleteUsersMutation = useDeleteUserMutation();
   const router = useRouter();
+
+  const handleDeleteUsers = async () => {
+    try {
+      await deleteUsersMutation.mutateAsync([row.original.id]);
+    } catch (error) {
+      console.error("Erreur lors de la suppression des utilisateurs:", error);
+    }
+  };
 
   const openUserDetails = () => {
     router.push(`/dashboard/users/${row.original.id}`);
@@ -636,6 +723,42 @@ function RowActions({ row }: { row: Row<User> }) {
             <span>Voir les détails</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        {row.original.isActive && (
+          <>
+            <DropdownMenuSeparator />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  <span>Supprimer l&apos;utilisateur</span>
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir supprimer{" "}
+                    {/* {row.original.enrolledStudent.name}  */}
+                    de la cantine ?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteUsers}
+                    disabled={deleteUsersMutation.isPending}
+                  >
+                    {deleteUsersMutation.isPending
+                      ? "En cours..."
+                      : "Confirmer"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

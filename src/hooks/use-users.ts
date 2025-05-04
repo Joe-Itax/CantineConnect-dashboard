@@ -128,8 +128,11 @@ export function useAddUserMutation() {
         },
         body: JSON.stringify(user),
       });
-      if (!res.ok) throw new Error("Erreur lors de l'ajout de l'utilisateur");
-      return res.json();
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Erreur lors de l'ajout");
+      }
+      return data;
     },
     onSuccess: (data) => {
       show("success", data.message || "Utilisateur ajouté avec succès");
@@ -147,18 +150,23 @@ export function useDeleteUserMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (userId: string) => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${userId}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
-      );
-      if (!res.ok) throw new Error("Erreur lors de la suppression");
+    mutationFn: async (userIds: string[]) => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userIds }),
+      });
+
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || "Erreur lors de la suppression");
+      return data;
     },
-    onSuccess: () => {
-      show("success", "Utilisateur supprimé avec succès");
+    onSuccess: (data) => {
+      show("success", data.message || "Utilisateur supprimé avec succès");
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => {

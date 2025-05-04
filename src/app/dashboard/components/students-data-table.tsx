@@ -137,7 +137,9 @@ const columns: ColumnDef<CanteenStudent>[] = [
     id: "name",
     header: "Nom",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.enrolledStudent.name}</div>
+      <div className={`font-medium ${!row.original.isActive && "bg-red-400"}`}>
+        {row.original.enrolledStudent.name}
+      </div>
     ),
     size: 150,
     enableHiding: false,
@@ -191,7 +193,7 @@ const columns: ColumnDef<CanteenStudent>[] = [
       return hasActiveAbonnement ? "Actif" : "Inactif";
     },
     id: "status",
-    header: "Statut Abonnement",
+    header: "Abonnement",
     filterFn: (row, columnId, filterValue) => {
       const value = row.getValue(columnId) as string;
       return (filterValue as string[]).includes(value);
@@ -698,7 +700,7 @@ export default function StudentsDataTable() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className={`h-24 text-center `}
                 >
                   Aucun élève trouvé.
                 </TableCell>
@@ -867,37 +869,44 @@ function RowActions({ row }: { row: Row<CanteenStudent> }) {
             <span>Voir les détails</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onSelect={(e) => e.preventDefault()}
-            >
-              <span>Désinscrire de la cantine</span>
-            </DropdownMenuItem>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmer la désinscription</AlertDialogTitle>
-              <AlertDialogDescription>
-                Êtes-vous sûr de vouloir désinscrire{" "}
-                {row.original.enrolledStudent.name} de la cantine ?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleRemove}
-                disabled={removeCanteenStudentMutation.isPending}
-              >
-                {removeCanteenStudentMutation.isPending
-                  ? "En cours..."
-                  : "Confirmer"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+
+        {row.original.isActive && (
+          <>
+            <DropdownMenuSeparator />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  <span>Désinscrire de la cantine</span>
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Confirmer la désinscription
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir désinscrire{" "}
+                    {row.original.enrolledStudent.name} de la cantine ?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleRemove}
+                    disabled={removeCanteenStudentMutation.isPending}
+                  >
+                    {removeCanteenStudentMutation.isPending
+                      ? "En cours..."
+                      : "Confirmer"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

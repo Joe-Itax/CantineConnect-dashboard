@@ -16,6 +16,7 @@ export interface CanteenStudent {
   enrolledStudentId: string;
   matriculeHashe: string;
   parentId: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   enrolledStudent: EnrolledStudent;

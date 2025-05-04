@@ -323,7 +323,7 @@ export function useRemoveCanteenStudentMutation() {
       );
       const data = await res.json();
       if (!res.ok) {
-        throw new Error("Erreur lors de la désinscription");
+        show("error", data.message || "Erreur lors de la désinscription.");
       }
 
       return data;
